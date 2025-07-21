@@ -1,0 +1,56 @@
+== Generating a Self-Signed Certificate
+ https://www.baeldung.com/spring-boot-https-self-signed-certificate
+
+== Step 1
+Now we’ll create a set of cryptographic keys, and store them in a keystore.
+
+We can use the following command to generate our PKCS12 keystore format:
+
+[source,text]
+----
+-- keytool -genkeypair -alias middlewares-nbc -keyalg RSA -keysize 2048 -storetype PKCS12 -keystore middlewares-nbc.p12 -validity 3650
+----
+
+== password
+[source,text]
+----
+iTrust@123
+----
+
+== Step 2
+Enabling HTTPS in Spring Boot
+
+[source,text]
+----
+-- Spring Boot provides a set of a declarative server.ssl.* properties. We’ll use those properties in our sample application to configure HTTPS.
+
+-- Then we’ll copy the file named “middlewares-nbc.p12,” generated in the previous step, into the “src/main/resources/keystore” directory.
+----
+
+== Step 3
+Configuring SSL Properties
+
+[source,text]
+----
+-- # The format used for the keystore. It could be set to JKS in case it is a JKS file
+-- server.ssl.key-store-type=PKCS12
+-- # The path to the keystore containing the certificate
+-- server.ssl.key-store=classpath:keystore/baeldung.p12
+-- # The password used to generate the certificate
+-- server.ssl.key-store-password=password
+-- # The alias mapped to the certificate
+-- server.ssl.key-alias=baeldung
+----
+
+== Step 4
+Since we’re using a Spring Security enabled application, let’s configure it to accept only HTTPS requests:
+
+[source,text]
+----
+-- server.ssl.enabled=true
+----
+
+
+keytool -import -trustcacerts -file server-cert.pem -alias myserver -keystore cacerts
+
+openssl s_client -connect localhost:7979 -showcerts

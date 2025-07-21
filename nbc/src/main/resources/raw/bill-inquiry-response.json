@@ -1,0 +1,44 @@
+{
+    "statusCode": 7101,
+    "message": "Successful",
+    "channelRef": "241210152320411402",
+    "cbpGwRef": "CB2412101191000",
+    "meter": "24730238417",
+    "billDtls": {
+        "Meter": "24730238417",
+        "Owner": "KASORE GABRIEL NYABUTA",
+        "ExpectedDeductions": [
+            {
+                "DebtType": "PTD",
+                "DebtName": "PTD",
+                "DebtRate": "UNKNOWN",
+                "DebtBalance": "0.0"
+            },
+            {
+                "DebtType": "MID",
+                "DebtName": "MID",
+                "DebtRate": "UNKNOWN",
+                "DebtBalance": "0.0"
+            },
+            {
+                "DebtType": "MID",
+                "DebtName": "MID",
+                "DebtRate": "UNKNOWN",
+                "DebtBalance": "0.0"
+            }
+        ],
+        "ReservedField1": "",
+        "ReservedField2": "",
+        "ReservedField3": ""
+    },
+    "totalCharges": null,
+    "lukuRespInf": null,
+    "payer": {
+        "fullName": "ABDUL *** ***ANDAWE",
+        "language": "ENG",
+        "email": "abanda***@***il.com",
+        "branch": "011",
+        "phone": "***688****199",
+        "account": "011102001154"
+    }
+}

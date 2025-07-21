@@ -1,0 +1,30 @@
+services:
+  nbd-middleware-application:
+    container_name: nbc-middleware-app
+    image: nbc-docker:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    restart: always
+    expose:
+      - 7272
+    ports:
+      - 7272:7272
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=iTrust123
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://192.168.1.18:5432/middlewares_nbc_uat
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=iTrust123
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+
+    volumes:
+      - nbc-middleware-volume:/middlewares/nbc
+    networks:
+      - nbd-middleware-network
+
+networks:
+  nbd-middleware-network:
+
+volumes:
+  nbc-middleware-volume:

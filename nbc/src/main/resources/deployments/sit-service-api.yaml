@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nbc-middleware-sit
+  namespace: sit
+spec:
+  ports:
+    - name: http
+      port: 10103
+      targetPort: 10103
+      protocol: TCP
+  type: LoadBalancer
+  selector:
+    app: nbc-middleware-sit

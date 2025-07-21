@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nbc-middleware-sit
+  name: nbc-middleware-sit
+  namespace: sit
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nbc-middleware-sit
+  template:
+    metadata:
+      labels:
+        app: nbc-middleware-sit
+    spec:
+      containers:
+        - image: localhost:5000/nbc-middleware-sit:latest
+          name: nbc-middleware-sit
+          ports:
+            - containerPort: 10103
