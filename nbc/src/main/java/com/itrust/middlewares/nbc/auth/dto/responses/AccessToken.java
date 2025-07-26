@@ -1,21 +1,24 @@
 package com.itrust.middlewares.nbc.auth.dto.responses;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class AccessToken {
-    
-    @NotBlank
-    private String access_token;
 
     @NotBlank
+    @JsonProperty("access_token")
+    private String accessToken;
+
+    @NotBlank
+    @JsonProperty("scope")
     private String scope;
 
     @NotBlank
-    private String token_type;
+    @JsonProperty("token_type")
+    private String tokenType;
 
-    @NotBlank
-    private int expires_in;
-
+    @JsonProperty("expires_in")
+    private int expiresIn;
 }

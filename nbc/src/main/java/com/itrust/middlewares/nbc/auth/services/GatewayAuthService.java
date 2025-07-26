@@ -1,7 +1,8 @@
 package com.itrust.middlewares.nbc.auth.services;
 
-
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itrust.middlewares.nbc.auth.dto.responses.AccessToken;
 import com.itrust.middlewares.nbc.config.properties.AuthServerProperties;
 import com.itrust.middlewares.nbc.responses.GenericRestResponse;
@@ -10,6 +11,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
@@ -17,10 +19,11 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class GatewayAuthService {
 
-    private final StringRedisTemplate redisTemplate; // Spring Redis Template
+    private final StringRedisTemplate redisTemplate;
     private static final String TOKEN_CACHE_KEY = "api_gateway:access_token";
-    private static final long TOKEN_EXPIRY_BUFFER = 30; // Buffer time in seconds
+    private static final long TOKEN_EXPIRY_BUFFER = 30; // seconds buffer before expiry
     private final AuthServerProperties authServerProperties;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public GatewayAuthService(StringRedisTemplate redisTemplate, AuthServerProperties authServerProperties) {
         this.redisTemplate = redisTemplate;
@@ -28,55 +31,47 @@ public class GatewayAuthService {
     }
 
     public String getAccessToken() throws JsonProcessingException {
+        String cachedToken = redisTemplate.opsForValue().get(TOKEN_CACHE_KEY);
+        if (cachedToken != null && !cachedToken.isEmpty()) {
+            return cachedToken;
+        }
+
         return requestNewToken();
     }
 
     public String requestNewToken() throws JsonProcessingException {
-        String tokenResponse = fetchTokenFromAuthServer(); // Call OAuth2 server
+        String tokenResponse = fetchTokenFromAuthServer(); // Raw JSON string
 
-        log.info("token response: {}", tokenResponse);
+        log.info("Token response: {}", tokenResponse);
 
-        GenericRestResponse<AccessToken> response = GenericRestResponse.fromJson(tokenResponse, new com.fasterxml.jackson.core.type.TypeReference<>() {});
+        AccessToken token = objectMapper.readValue(tokenResponse, AccessToken.class);
 
-        if(response != null) {
-            if(response.getData() != null) {
-                String accessToken = response.getData().getAccess_token() != null ? response.getData().getAccess_token() : "";
-                int expiresIn = response.getData().getExpires_in();
+        if (token != null && token.getAccessToken() != null) {
+            String accessToken = token.getAccessToken();
+            int expiresIn = token.getExpiresIn();
 
-                // Store token in Redis with expiry (minus buffer)
-                redisTemplate.opsForValue().set(TOKEN_CACHE_KEY, accessToken, expiresIn - TOKEN_EXPIRY_BUFFER, TimeUnit.SECONDS);
-                return accessToken;
-            } else {
-                log.error("Error fetching token: {}", response.getMessage());
-            }
+            // Save in Redis with buffer time
+            redisTemplate.opsForValue().set(TOKEN_CACHE_KEY, accessToken, expiresIn - TOKEN_EXPIRY_BUFFER, TimeUnit.SECONDS);
+            return accessToken;
+        } else {
+            log.error("Error fetching token or token is null");
+            return "";
         }
-
-        return "";
     }
 
-    private String fetchTokenFromAuthServer() throws JsonProcessingException {
 
-        String json = """
-                {
-                    "clientName": "iTrust Finance Limited",
-                    "clientId": "yastanzania.client",
-                    "clientSecret": "yasSecret.itrust123!",
-                    "authenticationMethod": ["client_secret_basic"],
-                    "grantTypes": ["client_credentials"],
-                    "scopes": ["read", "write"],
-                    "redirectUris": ["http://localhost:2020/callback"]
-                }""";
-//        ClientRegistrationRequest requestClient = objectMapper.readValue(json, ClientRegistrationRequest.class);
-//        producerTemplate.requestBody("direct:clients-register", requestClient, GenericRestResponse.class);
+    private String fetchTokenFromAuthServer() {
+        String body = "grant_type=client_credentials&scope=funds_read";
 
-        // Request new token
-        String body = "grant_type=client_credentials&&scope=funds_read";
-        // Send request to OAuth2 server
+        String basicAuth = Base64.getEncoder().encodeToString(
+                (authServerProperties.getClientId() + ":" + authServerProperties.getClientSecret()).getBytes()
+        );
+
         return RestClient.create()
                 .post()
                 .uri(authServerProperties.getIssuerUri() + "/oauth2/token")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .header("Authorization", "Basic " + Base64.getEncoder().encodeToString(("yastanzania.client:yasSecret.itrust123!").getBytes()))
+                .header("Authorization", "Basic " + basicAuth)
                 .body(body)
                 .retrieve()
                 .body(String.class);
